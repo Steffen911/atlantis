@@ -87,6 +87,8 @@ type ProjectCommandRunner interface {
 	Plan(ctx models.ProjectCommandContext) models.ProjectResult
 	// Apply runs terraform apply for the project described by ctx.
 	Apply(ctx models.ProjectCommandContext) models.ProjectResult
+	// Import runs terraform import for the project described by ctx.
+	Import(ctx models.ProjectCommandContext) models.ProjectResult
 }
 
 // DefaultProjectCommandRunner implements ProjectCommandRunner.
@@ -96,6 +98,7 @@ type DefaultProjectCommandRunner struct {
 	InitStepRunner      StepRunner
 	PlanStepRunner      StepRunner
 	ApplyStepRunner     StepRunner
+	ImportStepRunner    StepRunner
 	RunStepRunner       CustomStepRunner
 	EnvStepRunner       EnvStepRunner
 	PullApprovedChecker runtime.PullApprovedChecker
@@ -129,6 +132,20 @@ func (p *DefaultProjectCommandRunner) Apply(ctx models.ProjectCommandContext) mo
 		RepoRelDir:   ctx.RepoRelDir,
 		Workspace:    ctx.Workspace,
 		ProjectName:  ctx.ProjectName,
+	}
+}
+
+// Import runs terraform import for the project described by ctx.
+func (p *DefaultProjectCommandRunner) Import(ctx models.ProjectCommandContext) models.ProjectResult {
+	importOut, failure, err := p.doImport(ctx)
+	return models.ProjectResult{
+		Command:       models.ImportCommand,
+		Failure:       failure,
+		Error:         err,
+		ImportSuccess: importOut,
+		RepoRelDir:    ctx.RepoRelDir,
+		Workspace:     ctx.Workspace,
+		ProjectName:   ctx.ProjectName,
 	}
 }
 
@@ -192,6 +209,8 @@ func (p *DefaultProjectCommandRunner) runSteps(steps []valid.Step, ctx models.Pr
 		case "plan":
 			out, err = p.PlanStepRunner.Run(ctx, step.ExtraArgs, absPath, envs)
 		case "apply":
+			out, err = p.ApplyStepRunner.Run(ctx, step.ExtraArgs, absPath, envs)
+		case "import":
 			out, err = p.ApplyStepRunner.Run(ctx, step.ExtraArgs, absPath, envs)
 		case "run":
 			out, err = p.RunStepRunner.Run(ctx, step.RunCommand, absPath, envs)

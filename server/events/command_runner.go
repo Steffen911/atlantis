@@ -322,6 +322,7 @@ func (c *DefaultCommandRunner) RunCommentCommand(baseRepo models.Repo, maybeHead
 		ctx.Log.Info("Running plans in parallel")
 		result = c.runProjectCmdsParallel(projectCmds, cmd.Name)
 	} else {
+		// TODO(steffen911): Actually execute command
 		result = c.runProjectCmds(projectCmds, cmd.Name)
 	}
 
@@ -454,6 +455,8 @@ func (c *DefaultCommandRunner) runProjectCmds(cmds []models.ProjectCommandContex
 			res = c.ProjectCommandRunner.Plan(pCmd)
 		case models.ApplyCommand:
 			res = c.ProjectCommandRunner.Apply(pCmd)
+		case models.ImportCommand:
+			res = c.ProjectCommandRunner.Import(pCmd)
 		}
 		results = append(results, res)
 	}

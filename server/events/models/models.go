@@ -376,14 +376,15 @@ func SplitRepoFullName(repoFullName string) (owner string, repo string) {
 
 // ProjectResult is the result of executing a plan/apply for a specific project.
 type ProjectResult struct {
-	Command      CommandName
-	RepoRelDir   string
-	Workspace    string
-	Error        error
-	Failure      string
-	PlanSuccess  *PlanSuccess
-	ApplySuccess string
-	ProjectName  string
+	Command       CommandName
+	RepoRelDir    string
+	Workspace     string
+	Error         error
+	Failure       string
+	PlanSuccess   *PlanSuccess
+	ApplySuccess  string
+	ImportSuccess string
+	ProjectName   string
 }
 
 // CommitStatus returns the vcs commit status of this project result.
@@ -520,6 +521,8 @@ const (
 	PlanCommand
 	// UnlockCommand is a command to discard previous plans as well as the atlantis locks.
 	UnlockCommand
+	// ImportCommand is a command to run terraform import.
+	ImportCommand
 	// Adding more? Don't forget to update String() below
 )
 
@@ -532,6 +535,8 @@ func (c CommandName) String() string {
 		return "plan"
 	case UnlockCommand:
 		return "unlock"
+	case ImportCommand:
+		return "import"
 	}
 	return ""
 }
