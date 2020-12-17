@@ -18,7 +18,7 @@ func (i *ImportStepRunner) Run(ctx models.ProjectCommandContext, extraArgs []str
 		tfVersion = ctx.TerraformVersion
 	}
 
-	var importCmd []string
+	importCmd := append([]string{"import", "-input=false", "-no-color"}, extraArgs...)
 	output, err := i.TerraformExecutor.RunCommandWithVersion(ctx.Log, path, importCmd, envs, tfVersion, ctx.Workspace)
 
 	if err != nil {

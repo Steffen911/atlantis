@@ -31,11 +31,11 @@ const ApplyEvent = "apply"
 // Sender sends webhooks.
 type Sender interface {
 	// Send sends the webhook (if the implementation thinks it should).
-	Send(log *logging.SimpleLogger, applyResult ApplyResult) error
+	Send(log *logging.SimpleLogger, applyResult CommandResult) error
 }
 
-// ApplyResult is the result of a terraform apply.
-type ApplyResult struct {
+// CommandResult is the result of a terraform apply or a terraform import.
+type CommandResult struct {
 	Workspace string
 	Repo      models.Repo
 	Pull      models.PullRequest
@@ -93,7 +93,7 @@ func NewMultiWebhookSender(configs []Config, client SlackClient) (*MultiWebhookS
 }
 
 // Send sends the webhook using its Webhooks.
-func (w *MultiWebhookSender) Send(log *logging.SimpleLogger, result ApplyResult) error {
+func (w *MultiWebhookSender) Send(log *logging.SimpleLogger, result CommandResult) error {
 	for _, w := range w.Webhooks {
 		if err := w.Send(log, result); err != nil {
 			log.Warn("error sending slack webhook: %s", err)

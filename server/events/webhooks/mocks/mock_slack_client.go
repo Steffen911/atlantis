@@ -74,7 +74,7 @@ func (mock *MockSlackClient) ChannelExists(channelName string) (bool, error) {
 	return ret0, ret1
 }
 
-func (mock *MockSlackClient) PostMessage(channel string, applyResult webhooks.ApplyResult) error {
+func (mock *MockSlackClient) PostMessage(channel string, applyResult webhooks.CommandResult) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockSlackClient().")
 	}
@@ -187,7 +187,7 @@ func (c *MockSlackClient_ChannelExists_OngoingVerification) GetAllCapturedArgume
 	return
 }
 
-func (verifier *VerifierMockSlackClient) PostMessage(channel string, applyResult webhooks.ApplyResult) *MockSlackClient_PostMessage_OngoingVerification {
+func (verifier *VerifierMockSlackClient) PostMessage(channel string, applyResult webhooks.CommandResult) *MockSlackClient_PostMessage_OngoingVerification {
 	params := []pegomock.Param{channel, applyResult}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "PostMessage", params, verifier.timeout)
 	return &MockSlackClient_PostMessage_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -198,21 +198,21 @@ type MockSlackClient_PostMessage_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockSlackClient_PostMessage_OngoingVerification) GetCapturedArguments() (string, webhooks.ApplyResult) {
+func (c *MockSlackClient_PostMessage_OngoingVerification) GetCapturedArguments() (string, webhooks.CommandResult) {
 	channel, applyResult := c.GetAllCapturedArguments()
 	return channel[len(channel)-1], applyResult[len(applyResult)-1]
 }
 
-func (c *MockSlackClient_PostMessage_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []webhooks.ApplyResult) {
+func (c *MockSlackClient_PostMessage_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []webhooks.CommandResult) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]webhooks.ApplyResult, len(c.methodInvocations))
+		_param1 = make([]webhooks.CommandResult, len(c.methodInvocations))
 		for u, param := range params[1] {
-			_param1[u] = param.(webhooks.ApplyResult)
+			_param1[u] = param.(webhooks.CommandResult)
 		}
 	}
 	return

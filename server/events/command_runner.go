@@ -301,8 +301,10 @@ func (c *DefaultCommandRunner) RunCommentCommand(baseRepo models.Repo, maybeHead
 		projectCmds, err = c.ProjectCommandBuilder.BuildPlanCommands(ctx, cmd)
 	case models.ApplyCommand:
 		projectCmds, err = c.ProjectCommandBuilder.BuildApplyCommands(ctx, cmd)
+	case models.ImportCommand:
+		projectCmds, err = c.ProjectCommandBuilder.BuildImportCommands(ctx, cmd)
 	default:
-		ctx.Log.Err("failed to determine desired command, neither plan nor apply")
+		ctx.Log.Err("failed to determine desired command, neither plan nor apply nor import")
 		return
 	}
 	if err != nil {
@@ -322,7 +324,6 @@ func (c *DefaultCommandRunner) RunCommentCommand(baseRepo models.Repo, maybeHead
 		ctx.Log.Info("Running plans in parallel")
 		result = c.runProjectCmdsParallel(projectCmds, cmd.Name)
 	} else {
-		// TODO(steffen911): Actually execute command
 		result = c.runProjectCmds(projectCmds, cmd.Name)
 	}
 

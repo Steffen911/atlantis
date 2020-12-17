@@ -65,6 +65,9 @@ func (d *DefaultCommitStatusUpdater) UpdateCombinedCount(repo models.Repo, pull 
 	if command == models.ApplyCommand {
 		cmdVerb = "applied"
 	}
+	if command == models.ImportCommand {
+		cmdVerb = "imported"
+	}
 	return d.Client.UpdateStatus(repo, pull, status, src, fmt.Sprintf("%d/%d projects %s successfully.", numSuccess, numTotal, cmdVerb), "")
 }
 

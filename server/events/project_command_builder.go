@@ -47,6 +47,8 @@ type ProjectCommandBuilder interface {
 	// comment doesn't specify one project then there may be multiple commands
 	// to be run.
 	BuildApplyCommands(ctx *CommandContext, comment *CommentCommand) ([]models.ProjectCommandContext, error)
+	// BuildImportCommands builds project import commands for ctx and comment.
+	BuildImportCommands(ctx *CommandContext, comment *CommentCommand) ([]models.ProjectCommandContext, error)
 }
 
 // DefaultProjectCommandBuilder implements ProjectCommandBuilder.
@@ -96,6 +98,12 @@ func (p *DefaultProjectCommandBuilder) BuildApplyCommands(ctx *CommandContext, c
 		return p.buildApplyAllCommands(ctx, cmd)
 	}
 	pac, err := p.buildProjectApplyCommand(ctx, cmd)
+	return []models.ProjectCommandContext{pac}, err
+}
+
+// See ProjectCommandBuilder.BuildImportCommands.
+func (p *DefaultProjectCommandBuilder) BuildImportCommands(ctx *CommandContext, cmd *CommentCommand) ([]models.ProjectCommandContext, error) {
+	pac, err := p.buildProjectImportCommand(ctx, cmd)
 	return []models.ProjectCommandContext{pac}, err
 }
 
@@ -285,6 +293,36 @@ func (p *DefaultProjectCommandBuilder) buildProjectApplyCommand(ctx *CommandCont
 	return p.buildProjectCommandCtx(ctx, models.ApplyCommand, cmd.ProjectName, cmd.Flags, repoDir, repoRelDir, workspace, cmd.Verbose)
 }
 
+// buildProjectImportCommand builds an import command for the single project
+// identified by cmd.
+func (p *DefaultProjectCommandBuilder) buildProjectImportCommand(ctx *CommandContext, cmd *CommentCommand) (models.ProjectCommandContext, error) {
+	workspace := DefaultWorkspace
+	if cmd.Workspace != "" {
+		workspace = cmd.Workspace
+	}
+
+	var projCtx models.ProjectCommandContext
+	unlockFn, err := p.WorkingDirLocker.TryLock(ctx.Pull.BaseRepo.FullName, ctx.Pull.Num, workspace)
+	if err != nil {
+		return projCtx, err
+	}
+	defer unlockFn()
+
+	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, workspace)
+	if os.IsNotExist(errors.Cause(err)) {
+		return projCtx, errors.New("no working directory found–did you run plan?")
+	} else if err != nil {
+		return projCtx, err
+	}
+
+	repoRelDir := DefaultRepoRelDir
+	if cmd.RepoRelDir != "" {
+		repoRelDir = cmd.RepoRelDir
+	}
+
+	return p.buildProjectCommandCtx(ctx, models.ImportCommand, cmd.ProjectName, cmd.Flags, repoDir, repoRelDir, workspace, cmd.Verbose)
+}
+
 // buildProjectCommandCtx builds a context for a single project identified
 // by the parameters.
 func (p *DefaultProjectCommandBuilder) buildProjectCommandCtx(
@@ -426,6 +464,9 @@ func (p *DefaultProjectCommandBuilder) buildCtx(ctx *CommandContext,
 		steps = projCfg.Workflow.Plan.Steps
 	case models.ApplyCommand:
 		steps = projCfg.Workflow.Apply.Steps
+	case models.ImportCommand:
+		steps = projCfg.Workflow.Import.Steps
+		steps[0].ExtraArgs = commentArgs
 	}
 
 	// If TerraformVersion not defined in config file look for a

@@ -2,19 +2,19 @@
 package matchers
 
 import (
-	"reflect"
 	"github.com/petergtz/pegomock"
 	webhooks "github.com/runatlantis/atlantis/server/events/webhooks"
+	"reflect"
 )
 
-func AnyWebhooksApplyResult() webhooks.ApplyResult {
-	pegomock.RegisterMatcher(pegomock.NewAnyMatcher(reflect.TypeOf((*(webhooks.ApplyResult))(nil)).Elem()))
-	var nullValue webhooks.ApplyResult
+func AnyWebhooksApplyResult() webhooks.CommandResult {
+	pegomock.RegisterMatcher(pegomock.NewAnyMatcher(reflect.TypeOf((*(webhooks.CommandResult))(nil)).Elem()))
+	var nullValue webhooks.CommandResult
 	return nullValue
 }
 
-func EqWebhooksApplyResult(value webhooks.ApplyResult) webhooks.ApplyResult {
+func EqWebhooksApplyResult(value webhooks.CommandResult) webhooks.CommandResult {
 	pegomock.RegisterMatcher(&pegomock.EqMatcher{Value: value})
-	var nullValue webhooks.ApplyResult
+	var nullValue webhooks.CommandResult
 	return nullValue
 }

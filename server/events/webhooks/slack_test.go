@@ -37,7 +37,7 @@ func TestSend_PostMessage(t *testing.T) {
 		WorkspaceRegex: regex,
 		Channel:        channel,
 	}
-	result := webhooks.ApplyResult{
+	result := webhooks.CommandResult{
 		Workspace: "production",
 	}
 
@@ -59,7 +59,7 @@ func TestSend_NoopSuccess(t *testing.T) {
 		WorkspaceRegex: regex,
 		Channel:        channel,
 	}
-	result := webhooks.ApplyResult{
+	result := webhooks.CommandResult{
 		Workspace: "production",
 	}
 	err = hook.Send(logging.NewNoopLogger(), result)

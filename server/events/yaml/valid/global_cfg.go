@@ -80,6 +80,15 @@ var DefaultPlanStage = Stage{
 	},
 }
 
+// DefaultImportStage is the Atlantis default import stage.
+var DefaultImportStage = Stage{
+	Steps: []Step{
+		{
+			StepName: "import",
+		},
+	},
+}
+
 // NewGlobalCfg returns a global config that respects the parameters.
 // allowRepoCfg is true if users want to allow repos full config functionality.
 // mergeableReq is true if users want to set the mergeable apply requirement
@@ -88,9 +97,10 @@ var DefaultPlanStage = Stage{
 // for all repos.
 func NewGlobalCfg(allowRepoCfg bool, mergeableReq bool, approvedReq bool) GlobalCfg {
 	defaultWorkflow := Workflow{
-		Name:  DefaultWorkflowName,
-		Apply: DefaultApplyStage,
-		Plan:  DefaultPlanStage,
+		Name:   DefaultWorkflowName,
+		Apply:  DefaultApplyStage,
+		Plan:   DefaultPlanStage,
+		Import: DefaultImportStage,
 	}
 	// Must construct slices here instead of using a `var` declaration because
 	// we treat nil slices differently.

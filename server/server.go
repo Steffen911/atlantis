@@ -413,6 +413,12 @@ func NewServer(userConfig UserConfig, config Config) (*Server, error) {
 				CommitStatusUpdater: commitStatusUpdater,
 				AsyncTFExec:         terraformClient,
 			},
+			ImportStepRunner: &runtime.ImportStepRunner{
+				TerraformExecutor:   terraformClient,
+				DefaultTFVersion:    defaultTfVersion,
+				CommitStatusUpdater: commitStatusUpdater,
+				AsyncTFExec:         terraformClient,
+			},
 			RunStepRunner: runStepRunner,
 			EnvStepRunner: &runtime.EnvStepRunner{
 				RunStepRunner: runStepRunner,

@@ -29,15 +29,19 @@ import (
 )
 
 const (
-	workspaceFlagLong  = "workspace"
-	workspaceFlagShort = "w"
-	dirFlagLong        = "dir"
-	dirFlagShort       = "d"
-	projectFlagLong    = "project"
-	projectFlagShort   = "p"
-	verboseFlagLong    = "verbose"
-	verboseFlagShort   = ""
-	atlantisExecutable = "atlantis"
+	importIDFlagLong       = "id"
+	importIDFlagShort      = "i"
+	importAddressFlagLong  = "address"
+	importAddressFlagShort = "a"
+	workspaceFlagLong      = "workspace"
+	workspaceFlagShort     = "w"
+	dirFlagLong            = "dir"
+	dirFlagShort           = "d"
+	projectFlagLong        = "project"
+	projectFlagShort       = "p"
+	verboseFlagLong        = "verbose"
+	verboseFlagShort       = ""
+	atlantisExecutable     = "atlantis"
 )
 
 // multiLineRegex is used to ignore multi-line comments since those aren't valid
@@ -159,7 +163,7 @@ func (e *CommentParser) Parse(comment string, vcsHost models.VCSHostType) Commen
 	}
 
 	// Need to have a plan, apply or unlock at this point.
-	if !e.stringInSlice(command, []string{models.PlanCommand.String(), models.ApplyCommand.String(), models.UnlockCommand.String()}) {
+	if !e.stringInSlice(command, []string{models.PlanCommand.String(), models.ApplyCommand.String(), models.ImportCommand.String(), models.UnlockCommand.String()}) {
 		return CommentParseResult{CommentResponse: fmt.Sprintf("```\nError: unknown command %q.\nRun 'atlantis --help' for usage.\n```", command)}
 	}
 
@@ -187,6 +191,14 @@ func (e *CommentParser) Parse(comment string, vcsHost models.VCSHostType) Commen
 		flagSet.StringVarP(&workspace, workspaceFlagLong, workspaceFlagShort, "", "Apply the plan for this Terraform workspace.")
 		flagSet.StringVarP(&dir, dirFlagLong, dirFlagShort, "", "Apply the plan for this directory, relative to root of repo, ex. 'child/dir'.")
 		flagSet.StringVarP(&project, projectFlagLong, projectFlagShort, "", fmt.Sprintf("Apply the plan for this project. Refers to the name of the project configured in %s. Cannot be used at same time as workspace or dir flags.", yaml.AtlantisYAMLFilename))
+		flagSet.BoolVarP(&verbose, verboseFlagLong, verboseFlagShort, false, "Append Atlantis log to comment.")
+	case models.ImportCommand.String():
+		name = models.ImportCommand
+		flagSet = pflag.NewFlagSet(models.ImportCommand.String(), pflag.ContinueOnError)
+		flagSet.SetOutput(ioutil.Discard)
+		flagSet.StringVarP(&workspace, workspaceFlagLong, workspaceFlagShort, "", "Import the resource in this workspace.")
+		flagSet.StringVarP(&dir, dirFlagLong, dirFlagShort, "", "Run the Import in this directory, relative to root of repo, ex. 'child/dir'.")
+		flagSet.StringVarP(&project, projectFlagLong, projectFlagShort, "", fmt.Sprintf("Run the Import in this project. Refers to the name of the project configured in %s. Cannot be used at same time as workspace or dir flags.", yaml.AtlantisYAMLFilename))
 		flagSet.BoolVarP(&verbose, verboseFlagLong, verboseFlagShort, false, "Append Atlantis log to comment.")
 	case models.UnlockCommand.String():
 		name = models.UnlockCommand

@@ -417,6 +417,14 @@ func (p ProjectResult) PlanStatus() ProjectPlanStatus {
 			return ErroredApplyStatus
 		}
 		return AppliedPlanStatus
+
+	case ImportCommand:
+		if p.Error != nil {
+			return ErroredImportStatus
+		} else if p.Failure != "" {
+			return ErroredImportStatus
+		}
+		return RanImportStatus
 	}
 
 	panic("PlanStatus() missing a combination")
@@ -489,8 +497,13 @@ const (
 	// successfully.
 	AppliedPlanStatus
 	// DiscardedPlanStatus means that there was an unapplied plan that was
-	// discarded due to a project being unlocked
+	// discarded due to a project being unlocked.
 	DiscardedPlanStatus
+	// ErroredImportStatus means that there was an error during the terraform
+	// import.
+	ErroredImportStatus
+	// RanImportStatus means that the terraform import ran successfully.
+	RanImportStatus
 )
 
 // String returns a string representation of the status.
@@ -506,6 +519,10 @@ func (p ProjectPlanStatus) String() string {
 		return "applied"
 	case DiscardedPlanStatus:
 		return "plan_discarded"
+	case ErroredImportStatus:
+		return "import_errored"
+	case RanImportStatus:
+		return "imported"
 	default:
 		panic("missing String() impl for ProjectPlanStatus")
 	}

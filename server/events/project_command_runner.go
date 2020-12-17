@@ -75,7 +75,7 @@ type EnvStepRunner interface {
 // WebhooksSender sends webhook.
 type WebhooksSender interface {
 	// Send sends the webhook.
-	Send(log *logging.SimpleLogger, res webhooks.ApplyResult) error
+	Send(log *logging.SimpleLogger, res webhooks.CommandResult) error
 }
 
 //go:generate pegomock generate -m --use-experimental-model-gen --package mocks -o mocks/mock_project_command_runner.go ProjectCommandRunner
@@ -149,6 +149,58 @@ func (p *DefaultProjectCommandRunner) Import(ctx models.ProjectCommandContext) m
 	}
 }
 
+func (p *DefaultProjectCommandRunner) doImport(ctx models.ProjectCommandContext) (applyOut string, failure string, err error) {
+	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, ctx.Workspace)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", "", errors.New("project has not been cloned–did you run plan?")
+		}
+		return "", "", err
+	}
+	absPath := filepath.Join(repoDir, ctx.RepoRelDir)
+	if _, err = os.Stat(absPath); os.IsNotExist(err) {
+		return "", "", DirNotExistErr{RepoRelDir: ctx.RepoRelDir}
+	}
+
+	// Import should use the same requirements as apply
+	for _, req := range ctx.ApplyRequirements {
+		switch req {
+		case raw.ApprovedApplyRequirement:
+			approved, err := p.PullApprovedChecker.PullIsApproved(ctx.Pull.BaseRepo, ctx.Pull) // nolint: vetshadow
+			if err != nil {
+				return "", "", errors.Wrap(err, "checking if pull request was approved")
+			}
+			if !approved {
+				return "", "Pull request must be approved by at least one person other than the author before running import.", nil
+			}
+		case raw.MergeableApplyRequirement:
+			if !ctx.PullMergeable {
+				return "", "Pull request must be mergeable before running import.", nil
+			}
+		}
+	}
+	// Acquire internal lock for the directory we're going to operate in.
+	unlockFn, err := p.WorkingDirLocker.TryLock(ctx.Pull.BaseRepo.FullName, ctx.Pull.Num, ctx.Workspace)
+	if err != nil {
+		return "", "", err
+	}
+	defer unlockFn()
+
+	outputs, err := p.runSteps(ctx.Steps, ctx, absPath)
+	p.Webhooks.Send(ctx.Log, webhooks.CommandResult{ // nolint: errcheck
+		Workspace: ctx.Workspace,
+		User:      ctx.User,
+		Repo:      ctx.Pull.BaseRepo,
+		Pull:      ctx.Pull,
+		Success:   err == nil,
+		Directory: ctx.RepoRelDir,
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("%s\n%s", err, strings.Join(outputs, "\n"))
+	}
+	return strings.Join(outputs, "\n"), "", nil
+}
+
 func (p *DefaultProjectCommandRunner) doPlan(ctx models.ProjectCommandContext) (*models.PlanSuccess, string, error) {
 	// Acquire Atlantis lock for this repo/dir/workspace.
 	lockAttempt, err := p.Locker.TryLock(ctx.Log, ctx.Pull, ctx.User, ctx.Workspace, models.NewProject(ctx.Pull.BaseRepo.FullName, ctx.RepoRelDir))
@@ -211,7 +263,7 @@ func (p *DefaultProjectCommandRunner) runSteps(steps []valid.Step, ctx models.Pr
 		case "apply":
 			out, err = p.ApplyStepRunner.Run(ctx, step.ExtraArgs, absPath, envs)
 		case "import":
-			out, err = p.ApplyStepRunner.Run(ctx, step.ExtraArgs, absPath, envs)
+			out, err = p.ImportStepRunner.Run(ctx, step.ExtraArgs, absPath, envs)
 		case "run":
 			out, err = p.RunStepRunner.Run(ctx, step.RunCommand, absPath, envs)
 		case "env":
@@ -269,7 +321,7 @@ func (p *DefaultProjectCommandRunner) doApply(ctx models.ProjectCommandContext) 
 	defer unlockFn()
 
 	outputs, err := p.runSteps(ctx.Steps, ctx, absPath)
-	p.Webhooks.Send(ctx.Log, webhooks.ApplyResult{ // nolint: errcheck
+	p.Webhooks.Send(ctx.Log, webhooks.CommandResult{ // nolint: errcheck
 		Workspace: ctx.Workspace,
 		User:      ctx.User,
 		Repo:      ctx.Pull.BaseRepo,

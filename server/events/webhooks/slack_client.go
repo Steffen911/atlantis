@@ -31,7 +31,7 @@ type SlackClient interface {
 	AuthTest() error
 	TokenIsSet() bool
 	ChannelExists(channelName string) (bool, error)
-	PostMessage(channel string, applyResult ApplyResult) error
+	PostMessage(channel string, applyResult CommandResult) error
 }
 
 //go:generate pegomock generate -m --use-experimental-model-gen --package mocks -o mocks/mock_underlying_slack_client.go UnderlyingSlackClient
@@ -78,7 +78,7 @@ func (d *DefaultSlackClient) ChannelExists(channelName string) (bool, error) {
 	return false, nil
 }
 
-func (d *DefaultSlackClient) PostMessage(channel string, applyResult ApplyResult) error {
+func (d *DefaultSlackClient) PostMessage(channel string, applyResult CommandResult) error {
 	params := slack.NewPostMessageParameters()
 	params.Attachments = d.createAttachments(applyResult)
 	params.AsUser = true
@@ -87,7 +87,7 @@ func (d *DefaultSlackClient) PostMessage(channel string, applyResult ApplyResult
 	return err
 }
 
-func (d *DefaultSlackClient) createAttachments(applyResult ApplyResult) []slack.Attachment {
+func (d *DefaultSlackClient) createAttachments(applyResult CommandResult) []slack.Attachment {
 	var colour string
 	var successWord string
 	if applyResult.Success {

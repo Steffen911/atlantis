@@ -24,8 +24,9 @@ import (
 )
 
 const (
-	planCommandTitle  = "Plan"
-	applyCommandTitle = "Apply"
+	planCommandTitle   = "Plan"
+	applyCommandTitle  = "Apply"
+	importCommandTitle = "Import"
 	// maxUnwrappedLines is the maximum number of lines the Terraform output
 	// can be before we wrap it in an expandable template.
 	maxUnwrappedLines = 12
@@ -147,6 +148,8 @@ func (m *MarkdownRenderer) renderProjectResults(results []models.ProjectResult, 
 			} else {
 				resultData.Rendered = m.renderTemplate(applyUnwrappedSuccessTmpl, struct{ Output string }{result.ApplySuccess})
 			}
+		} else if result.ImportSuccess != "" {
+			resultData.Rendered = m.renderTemplate(importSuccessTmpl, struct{ Output string }{result.ImportSuccess})
 		} else {
 			resultData.Rendered = "Found no template. This is a bug!"
 		}
@@ -165,6 +168,8 @@ func (m *MarkdownRenderer) renderProjectResults(results []models.ProjectResult, 
 		tmpl = multiProjectPlanTmpl
 	case common.Command == applyCommandTitle:
 		tmpl = multiProjectApplyTmpl
+	case common.Command == importCommandTitle:
+		tmpl = importTmpl
 	default:
 		return "no template matched–this is a bug"
 	}
@@ -201,6 +206,8 @@ func (m *MarkdownRenderer) renderTemplate(tmpl *template.Template, data interfac
 }
 
 // todo: refactor to remove duplication #refactor
+var importTmpl = template.Must(template.New("").Parse(
+	"{{$result := index .Results 0}}Ran {{.Command}} for {{ if $result.ProjectName }}project: `{{$result.ProjectName}}` {{ end }}dir: `{{$result.RepoRelDir}}` workspace: `{{$result.Workspace}}`\n\n{{$result.Rendered}}\n" + logTmpl))
 var singleProjectApplyTmpl = template.Must(template.New("").Parse(
 	"{{$result := index .Results 0}}Ran {{.Command}} for {{ if $result.ProjectName }}project: `{{$result.ProjectName}}` {{ end }}dir: `{{$result.RepoRelDir}}` workspace: `{{$result.Workspace}}`\n\n{{$result.Rendered}}\n" + logTmpl))
 var singleProjectPlanSuccessTmpl = template.Must(template.New("").Parse(
@@ -271,6 +278,10 @@ var applyWrappedSuccessTmpl = template.Must(template.New("").Parse(
 		"{{.Output}}\n" +
 		"```\n" +
 		"</details>"))
+var importSuccessTmpl = template.Must(template.New("").Parse(
+	"```diff\n" +
+		"{{.Output}}\n" +
+		"```"))
 var unwrappedErrTmplText = "**{{.Command}} Error**\n" +
 	"```\n" +
 	"{{.Error}}\n" +
